@@ -7,6 +7,7 @@ import glob
 import subprocess
 import platform
 import argparse
+import pwd
 
 # Help
 parser = argparse.ArgumentParser(description='Returns a detailed list of all third-party startup items in OS.'
@@ -23,6 +24,10 @@ if os_ver < min_os_subversion:
     print "ERROR: This script requires OS %s or later." % str(min_os_subversion)
     print "Your OS Version: %s." % str(os_ver)
     sys.exit(1)
+
+# Get the username of the currently logged-in user.
+current_username = os.getlogin()
+current_uid = str(pwd.getpwnam(current_username).pw_uid)
 
 
 class ColoredText:
@@ -57,7 +62,7 @@ class StartupServices:
         self.shared_file_list = self.__get_login_items().split(',')
         self.launchagents_allusers = (self.__check_launchd_dirs('/Library/LaunchAgents/'))
         self.launchdaemons = (self.__check_launchd_dirs('/Library/LaunchDaemons/'))
-        self.launchagents_user = (self.__check_launchd_dirs(os.path.expanduser('~/Library/LaunchAgents/')))
+        self.launchagents_user = (self.__check_launchd_dirs('/Users/' + current_username + '/Library/LaunchAgents/'))
 
     @staticmethod
     def __get_login_items():
@@ -73,13 +78,10 @@ class StartupServices:
                 helper_bundle_id = subprocess.check_output([
                     '/usr/libexec/PlistBuddy', '-c', 'Print CFBundleIdentifier', helperpath + '/Contents/Info.plist'])
                 # If this script is run as root, we need to run launchctl as the current user instead of root
-                # if we want the right results. Since Python thinks the current user *is* root, we use AppleScript to
-                # get the currently logged-in user, then run `launchctl list` as that user.
+                # to get the proper results.
                 if os.getuid() == 0:
-                    current_user = subprocess.check_output([
-                        'osascript', '-e', 'tell application "System Events" to name of current user']).rstrip()
                     launchd_job_exists = subprocess.call([
-                        'sudo', '-u', current_user, 'launchctl', 'list',
+                        'sudo', '-u', current_username, 'launchctl', 'list',
                         helper_bundle_id.rstrip()], stdout=devnull, stderr=devnull)
                 else:
                     launchd_job_exists = subprocess.call([
@@ -97,15 +99,14 @@ class StartupServices:
         else:
             domain = 'user'
 
-        # OS 10.11 introduces a new location for the overrides/disabled fle.
-        uid = str(os.getuid())
+        # OS 10.11 introduces a new location for the overrides/disabled file.
         if os_ver >= 10.11:
             overrides_file_allusers = '/private/var/db/com.apple.xpc.launchd/disabled.plist'
-            overrides_file_user = '/private/var/db/com.apple.xpc.launchd/disabled.' + uid + '.plist'
+            overrides_file_user = '/private/var/db/com.apple.xpc.launchd/disabled.' + current_uid + '.plist'
         else:
             overrides_file_allusers = '/private/var/db/launchd.db/overrides.plist'
             overrides_file_user = 'overrides/private/var/db/launchd.db/com.apple.launchd.peruser.'\
-                                  + uid + '/overrides.plist'
+                                  + current_uid + '/overrides.plist'
 
         for plist in glob.glob(l_dir + '*'):
             skip = False
