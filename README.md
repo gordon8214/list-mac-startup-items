@@ -1,14 +1,12 @@
 # List Mac Startup Items
 
-## Description
-
 OS X has a bunch of different ways for processes to run at startup:
 
-* Shared file list (e.g., Users & Groups > Login Items)
-* Services Management Framework (API call + special helper in app bundle)
-* User-specific LaunchAgents
-* System-level LaunchAgents
-* LaunchDaemons
+- Shared file list (e.g., Users & Groups > Login Items)
+- Services Management Framework (API call + special helper in app bundle)
+- User-specific LaunchAgents
+- System-level LaunchAgents
+- LaunchDaemons
 
 This script finds third-party processes in any of these locations and determines whether they are set to execute on startup/login.
 
