@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
+from __future__ import print_function, unicode_literals
 import os
 import stat
 import sys
@@ -21,8 +23,8 @@ os_ver = int('.'.join(os_ver.split('.')[1:2]))
 devnull = open(os.devnull, 'w')
 
 if os_ver < min_os_subversion:
-    print "ERROR: This script requires OS %s or later." % str(min_os_subversion)
-    print "Your OS Version: %s." % str(os_ver)
+    print("ERROR: This script requires OS {} or later.".format(min_os_subversion))
+    print("Your OS Version: {}.".format(os_ver))
     sys.exit(1)
 
 # Get the username of the currently logged-in user.
@@ -50,7 +52,7 @@ class ColoredText:
         :param text: str
         """
 
-        print '\n' + msg_type + text + self.ENDC + '\n'
+        print('\n' + msg_type + text + self.ENDC + '\n')
 
 
 class StartupServices:
@@ -72,9 +74,9 @@ class StartupServices:
     def __get_loginitem_services(self):
         services_list = list()
         for app in self.apps:
-            if os.path.isdir(app + '/Contents/Library/LoginItems'):
-                helper = os.listdir(app + '/Contents/Library/LoginItems/')[0]
-                helperpath = app + '/Contents/Library/LoginItems/' + helper
+            if os.path.isdir(os.path.join(app, '/Contents/Library/LoginItems')):
+                helper = os.listdir(os.path.join(app, '/Contents/Library/LoginItems/'))[0]
+                helperpath = os.path.join(app, '/Contents/Library/LoginItems/', helper)
                 helper_bundle_id = subprocess.check_output([
                     '/usr/libexec/PlistBuddy', '-c', 'Print CFBundleIdentifier', helperpath + '/Contents/Info.plist'])
                 # If this script is run as root, we need to run launchctl as the current user instead of root
@@ -119,16 +121,14 @@ class StartupServices:
                 job_label = ''
                 if os.path.islink(plist):
                     if not os.path.exists(os.readlink(plist)):
-                        self.warnings.append("- Job '%s' is a symbolic link to a nonexistent file.\n "
-                                             "It should be safe to delete." % plist)
-                    else:
-                        pass
+                        self.warnings.append("- Job '{}' is a symbolic link to a nonexistent file.\n "
+                                             "It should be safe to delete.".format(plist))
 
                 elif not os.access(plist, os.R_OK):
-                    self.warnings.append("- Job '%s' requires root privileges to read. This is unusual.\n"
-                                         "Run this script again using 'sudo' in order to read this job." % plist)
+                    self.warnings.append("- Job '{}' requires root privileges to read. This is unusual.\n"
+                                         "Run this script again using 'sudo' in order to read this job.".format(plist))
                 else:
-                    self.warnings.append("- Job '%s' could not be read. It may be corrupt." % plist)
+                    self.warnings.append("- Job '{}' could not be read. It may be corrupt.".format(plist))
 
             # Check if job is disabled by either default value or override.
             # The keys in the 'disabled' files override the Disabled key in the launchd job file.
@@ -136,6 +136,9 @@ class StartupServices:
                 overrides_file = overrides_file_allusers
             elif domain == 'user':
                 overrides_file = overrides_file_user
+            else:
+                overrides_file = None
+
             if plist_key_exists(job_label, overrides_file):
                 if plist_val_true(job_label, overrides_file):
                     skip = True
@@ -194,9 +197,9 @@ def get_all_apps():
     """Use Spotlight to get path to all apps, excluding those in /System"""
 
     find_all_apps = subprocess.check_output(['mdfind', 'kMDItemKind == Application'])
-    apps_to_check = []
-    for app in find_all_apps.split('\n'):
-        if '/System/' not in app:
+    apps_to_check = list()
+    for app in find_all_apps.split(b'\n'):
+        if b'/System/' not in app:
             apps_to_check.append(app)
     return apps_to_check
 
@@ -250,11 +253,11 @@ def print_launchd(location, title):
         colors.print_header(colors.HEADER, title)
 
         for start_item in location:
-            print start_item[0]
+            print(start_item[0])
             if start_item[1] != '':
-                print colors.BOLD + '\tArguments: ' + colors.ENDC + ' '.join(start_item[1]) + '\n'
+                print(colors.BOLD + '\tArguments: ' + colors.ENDC + ' '.join(start_item[1]) + '\n')
             else:
-                print ''
+                print('')
     else:
         pass
 
@@ -266,13 +269,13 @@ if services.shared_file_list:
     colors.print_header(colors.HEADER,
                         'Startup items in shared file list (System Preferences > Users & Groups > Login Items):')
     for startup_item in services.shared_file_list:
-        print startup_item
+        print(startup_item)
 
 if services.services:
     colors.print_header(colors.HEADER, 'Startup items loaded by the Services Management Framework:')
     for startup_item in services.services:
-        print startup_item[0]
-        print '\tHelper app: ' + startup_item[1] + '\n'
+        print(startup_item[0])
+        print('\tHelper app: ' + startup_item[1] + '\n')
 
 
 print_launchd(services.launchagents_allusers, 'LaunchAgents (run at login for all users)\n'
@@ -285,15 +288,15 @@ print_launchd(services.launchagents_user, 'User LaunchAgents (run at login for t
 if services.warnings:
     colors.print_header(colors.WARNING, 'Warnings')
     for warning in services.warnings:
-        print warning + '\n'
+        print(warning + '\n')
 
 
 colors.print_header(colors.HEADER, 'Notes')
 
-print '- To remove items from the shared file list, go to System Preferences > Users & Groups > Login Items.\n'
+print('- To remove items from the shared file list, go to System Preferences > Users & Groups > Login Items.\n')
 
-print '- Items cannot be removed from the Services Management Framework manually.\n' \
-      '  Open the associated app and look for an option to disable automatic launch on startup.\n'
+print('- Items cannot be removed from the Services Management Framework manually.\n'
+      '  Open the associated app and look for an option to disable automatic launch on startup.\n')
 
-print '- LaunchAgents/LaunchDaemons aren\'t necessarily running all the time.\n' \
-      '  They may run once and exit, or run on a schedule.'
+print('- LaunchAgents/LaunchDaemons aren\'t necessarily running all the time.\n'
+      '  They may run once and exit, or run on a schedule.')
