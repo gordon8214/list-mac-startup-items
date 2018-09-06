@@ -9,8 +9,6 @@ import platform
 import argparse
 import pwd
 
-# TODO: Find why Services Management Framework items are not showing up. Example: ToothFairy.
-
 # Help
 parser = argparse.ArgumentParser(description='Returns a detailed list of all third-party startup items in OS.'
                                              'Takes no arguments.')
@@ -78,7 +76,7 @@ class StartupServices:
                 helper = os.listdir(os.path.join(app, 'Contents/Library/LoginItems/'))[0]
                 helperpath = os.path.join(app, 'Contents/Library/LoginItems/', helper)
                 helper_bundle_id = subprocess.check_output([
-                    '/usr/libexec/PlistBuddy', '-c', 'Print CFBundleIdentifier', helperpath + '/Contents/Info.plist'])
+                    '/usr/libexec/PlistBuddy', '-c', 'Print CFBundleIdentifier', helperpath + '/Contents/Info.plist']).decode('utf-8')
                 # If this script is run as root, we need to run launchctl as the current user instead of root
                 # to get the proper results.
                 if os.getuid() == 0:
@@ -115,7 +113,7 @@ class StartupServices:
 
             try:
                 job_label = (subprocess.check_output(['/usr/libexec/PlistBuddy',
-                                                      '-c', 'Print Label', plist], stderr=devnull)).rstrip()
+                                                      '-c', 'Print Label', plist], stderr=devnull)).rstrip().decode('utf-8')
             except subprocess.CalledProcessError:
                 # Try to figure out why we can't read a plist's label attribute.
                 job_label = ''
@@ -151,27 +149,27 @@ class StartupServices:
             if not skip:
                 if plist_key_exists('Program', plist):
                     startup_agent = (subprocess.check_output(['/usr/libexec/PlistBuddy',
-                                                              '-c', 'Print Program', plist])).rstrip()
+                                                              '-c', 'Print Program', plist])).rstrip().decode('utf-8')
                     if plist_key_exists('ProgramArguments', plist):
                         arguments = (subprocess.check_output([
-                            '/usr/libexec/PlistBuddy', '-c', 'Print ProgramArguments', plist], stderr=devnull)).rstrip()
+                            '/usr/libexec/PlistBuddy', '-c', 'Print ProgramArguments', plist], stderr=devnull)).rstrip().decode('utf-8')
                         arguments = arguments.split('\n')
                         # Remove array formatters.
                         del arguments[0]
                         del arguments[-1]
-                        arguments = map(lambda x: x.lstrip(), arguments)
+                        arguments = list(map(lambda x: x.lstrip(), arguments))
                         if arguments[0] == startup_agent:
                             del arguments[0]
                 else:
                     arguments = (subprocess.check_output([
-                        '/usr/libexec/PlistBuddy', '-c', 'Print ProgramArguments', plist], stderr=devnull)).rstrip()
+                        '/usr/libexec/PlistBuddy', '-c', 'Print ProgramArguments', plist], stderr=devnull)).rstrip().decode('utf-8')
                     arguments = arguments.split('\n')
                     # Remove array formatters.
                     del arguments[0]
                     del arguments[-1]
                     startup_agent = arguments[0].lstrip()
                     if len(arguments) > 1:
-                        arguments = map(lambda x: x.lstrip(), arguments[1:])
+                        arguments = list(map(lambda x: x.lstrip(), arguments[1:]))
                     else:
                         arguments = None
 
@@ -212,7 +210,7 @@ def plist_val_true(key, plist):
     """
 
     try:
-        result = subprocess.check_output(['/usr/libexec/PlistBuddy', '-c', 'Print ' + key, plist], stderr=devnull)
+        result = subprocess.check_output(['/usr/libexec/PlistBuddy', '-c', 'Print ' + key, plist], stderr=devnull).decode('utf-8')
         if result.rstrip() == 'true':
             result = True
         else:
@@ -231,7 +229,7 @@ def plist_key_exists(key, plist):
     """
 
     try:
-        subprocess.check_output(['/usr/libexec/PlistBuddy', '-c', 'Print {}'.format(key), plist], stderr=devnull)
+        subprocess.check_output(['/usr/libexec/PlistBuddy', '-c', 'Print {}'.format(key), plist], stderr=devnull).decode('utf-8')
     except subprocess.CalledProcessError:
         return False
 
