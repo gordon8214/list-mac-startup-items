@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='Returns a detailed list of all thi
                                              'Takes no arguments.')
 args = parser.parse_args()
 
-# Get current OS X version. Format: 10.x (int).
+# Get current macOS version. Format: 10.x (int).
 min_os_subversion = 7
 os_ver = platform.mac_ver()[0]
 os_ver = int('.'.join(os_ver.split('.')[1:2]))
@@ -183,8 +183,7 @@ class StartupServices:
 def is_readable(filepath):
     """
     Determine if we have read access to a file.
-
-    :param filepath: str
+    :param filepath: Path to file to check for read access.
     """
 
     st = os.stat(filepath)
@@ -205,16 +204,13 @@ def get_all_apps():
 def plist_val_true(key, plist):
     """Check if a plist boolean key exists and is True.
 
-    :param key: str
-    :param plist: str
+    :param key: Key to look for.
+    :param plist: Plist file to look in.
     """
 
     try:
         result = subprocess.check_output(['/usr/libexec/PlistBuddy', '-c', 'Print ' + key, plist], stderr=devnull).decode('utf-8')
-        if result.rstrip() == 'true':
-            result = True
-        else:
-            result = False
+        result = bool(result.rstrip() == 'true')
     except subprocess.CalledProcessError:
         result = False
     return result
@@ -224,8 +220,8 @@ def plist_key_exists(key, plist):
     """
     Check if a given key exists.
 
-    :param key: str
-    :param plist: str
+    :param key: Key to look for.
+    :param plist: Plist file to look in.
     """
 
     try:
@@ -244,8 +240,8 @@ def print_launchd(location, title):
     """
     Printed a formatted list of launchd jobs.
 
-    :param title: str
-    :param location: list
+    :param title: Title to print above list of jobs.
+    :param location: Path to look for jobs in.
     """
     if location:  # Print headers only if there are actually startup items in this category.
         colors.print_header(colors.HEADER, title)
