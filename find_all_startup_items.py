@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
-from __future__ import print_function, unicode_literals
 import os
 import stat
 import sys
@@ -10,6 +8,8 @@ import subprocess
 import platform
 import argparse
 import pwd
+
+# TODO: Find why Services Management Framework items are not showing up. Example: ToothFairy.
 
 # Help
 parser = argparse.ArgumentParser(description='Returns a detailed list of all third-party startup items in OS.'
@@ -69,14 +69,14 @@ class StartupServices:
     @staticmethod
     def __get_login_items():
         return subprocess.check_output(['osascript', '-e',
-                                        'tell application "System Events" to get the path of every login item'])
+                                        'tell application "System Events" to get the path of every login item']).decode('utf-8')
 
     def __get_loginitem_services(self):
         services_list = list()
         for app in self.apps:
-            if os.path.isdir(os.path.join(app, '/Contents/Library/LoginItems')):
-                helper = os.listdir(os.path.join(app, '/Contents/Library/LoginItems/'))[0]
-                helperpath = os.path.join(app, '/Contents/Library/LoginItems/', helper)
+            if os.path.isdir(os.path.join(app, 'Contents/Library/LoginItems')):
+                helper = os.listdir(os.path.join(app, 'Contents/Library/LoginItems/'))[0]
+                helperpath = os.path.join(app, 'Contents/Library/LoginItems/', helper)
                 helper_bundle_id = subprocess.check_output([
                     '/usr/libexec/PlistBuddy', '-c', 'Print CFBundleIdentifier', helperpath + '/Contents/Info.plist'])
                 # If this script is run as root, we need to run launchctl as the current user instead of root
@@ -196,10 +196,10 @@ def is_readable(filepath):
 def get_all_apps():
     """Use Spotlight to get path to all apps, excluding those in /System"""
 
-    find_all_apps = subprocess.check_output(['mdfind', 'kMDItemKind == Application'])
+    find_all_apps = subprocess.check_output(['mdfind', 'kMDItemKind == Application']).decode('utf-8')
     apps_to_check = list()
-    for app in find_all_apps.split(b'\n'):
-        if b'/System/' not in app:
+    for app in find_all_apps.split('\n'):
+        if '/System/' not in app:
             apps_to_check.append(app)
     return apps_to_check
 
@@ -231,7 +231,7 @@ def plist_key_exists(key, plist):
     """
 
     try:
-        subprocess.check_output(['/usr/libexec/PlistBuddy', '-c', 'Print ' + key, plist], stderr=devnull)
+        subprocess.check_output(['/usr/libexec/PlistBuddy', '-c', 'Print {}'.format(key), plist], stderr=devnull)
     except subprocess.CalledProcessError:
         return False
 
